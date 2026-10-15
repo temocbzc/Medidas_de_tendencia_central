@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanza de la Media</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1F3864; --ink: #1B2433; --muted: #5A6578; --paper: #F4F6FA; --surface: #FFFFFF;
+    --line: #C9D3E3; --zebra: #EEF2F8; --total: #D6DEEB; --head-text: #FFFFFF; --focus: #3B6FD6;
+    --warn-bg: #FFF4E0; --warn-ink: #7A4B00; --ok-bg: #E6F3EA; --ok-ink: #1E5B32; --bad-ink: #B3261E;
+    --tip: #8A6D3B; --tip-bg: #F6EFE2; --given: #E9EDF4;
+    --sans: "Source Sans 3", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --navy: #8FB0E8; --ink: #E4E9F2; --muted: #A3AEC2; --paper: #121722; --surface: #1A2130;
+      --line: #33405A; --zebra: #1F2839; --total: #2A3650; --head-text: #0F1420; --focus: #8FB0E8;
+      --warn-bg: #3A2C12; --warn-ink: #F3D39A; --ok-bg: #16301F; --ok-ink: #A8DDB8; --bad-ink: #F2B8B5;
+      --tip: #E2C48E; --tip-bg: #2C2618; --given: #263045;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --navy: #8FB0E8; --ink: #E4E9F2; --muted: #A3AEC2; --paper: #121722; --surface: #1A2130;
+    --line: #33405A; --zebra: #1F2839; --total: #2A3650; --head-text: #0F1420; --focus: #8FB0E8;
+    --warn-bg: #3A2C12; --warn-ink: #F3D39A; --ok-bg: #16301F; --ok-ink: #A8DDB8; --bad-ink: #F2B8B5;
+    --tip: #E2C48E; --tip-bg: #2C2618; --given: #263045;
+  }
+  [hidden] { display: none !important; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.5; margin: 0; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 22px 16px 60px; display: grid; gap: 20px; }
+  header .kicker { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 4px; }
+  header h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.15; color: var(--navy); margin: 0 0 8px; }
+  header p { margin: 0; color: var(--muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+  .act { display: flex; align-items: center; gap: 10px; margin: 0; }
+  .act .num { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: var(--head-text); display: grid; place-items: center; font-weight: 700; }
+  .act h2 { font-family: var(--serif); font-weight: 600; font-size: 1.3rem; margin: 0; color: var(--navy); line-height: 1.2; }
+  h2.plain { font-family: var(--serif); font-weight: 600; font-size: 1.2rem; color: var(--navy); margin: 0; }
+  h3 { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; color: var(--navy); margin: 4px 0 0; }
+  p { margin: 0; }
+  .hint { font-size: 0.86rem; color: var(--muted); }
+  .nota { background: var(--tip-bg); border-left: 3px solid var(--tip); border-radius: 6px; padding: 10px 12px; font-size: 0.93rem; }
+  .formula { font-family: var(--serif); font-size: 1.08rem; text-align: center; overflow-x: auto; padding: 4px 0; }
+  .sym { font-family: var(--serif); font-style: italic; }
+  .field { display: grid; gap: 6px; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label { font-weight: 600; font-size: 0.97rem; }
+  .q > label .qn, .q > .flabel .qn { color: var(--navy); margin-right: 4px; }
+  .flabel { font-weight: 600; font-size: 0.97rem; }
+  input[type="text"], input[type="number"], textarea {
+    font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+    border-radius: 6px; padding: 9px 10px; width: 100%; box-sizing: border-box;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible, select:focus-visible, .chk:focus-within, .opc label:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .resp { display: flex; align-items: center; gap: 8px; }
+  .resp .lab { font-family: var(--serif); font-style: italic; font-size: 1.1rem; white-space: nowrap; }
+  .resp input { max-width: 140px; }
+
+  button { font: inherit; font-weight: 700; border-radius: 6px; padding: 11px 14px; cursor: pointer; border: 1px solid var(--navy); }
+  .primary { background: var(--navy); color: var(--head-text); }
+  .secondary { background: transparent; color: var(--navy); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .msg { border-radius: 6px; padding: 10px 12px; font-size: 0.92rem; }
+  .msg.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .msg.ok { background: var(--ok-bg); color: var(--ok-ink); }
+
+  /* Calificaciones */
+  .califs { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+  .califs .cel { display: grid; gap: 2px; }
+  .califs .cel span { font-size: 0.75rem; color: var(--muted); text-align: center; }
+  .califs input { text-align: center; padding: 8px 4px; font-variant-numeric: tabular-nums; }
+
+  /* Opciones de moda */
+  .opc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opc label { position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 6px; padding: 9px 6px; cursor: pointer; background: var(--paper); font-weight: 600; min-height: 44px; box-sizing: border-box; }
+  .opc input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .opc label:has(input:checked) { background: var(--navy); color: var(--head-text); border-color: var(--navy); }
+
+  /* Simulador */
+  .sim { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px; display: grid; gap: 8px; }
+  .sim-top { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .sim-top .titulo { font-weight: 700; color: var(--navy); font-size: 0.95rem; margin-right: auto; }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+  .chk input { width: 18px; height: 18px; margin: 0; accent-color: var(--navy); }
+  .chk .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .sim canvas { display: block; width: 100%; background: #FFFFFF; border-radius: 8px; border: 1px solid var(--line); touch-action: none; }
+  .sim-lectura { font-size: 0.92rem; font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .sim-lectura b { color: var(--navy); }
+  .sim-lectura .eq { color: var(--ok-ink); font-weight: 700; }
+  .sim-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sim-acciones button { padding: 8px 12px; font-size: 0.88rem; }
+  .sim select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; max-width: 100%; }
+  .guardada { font-size: 0.85rem; color: var(--ok-ink); font-weight: 600; }
+
+  /* Tabla de desviaciones */
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--line); padding: 4px; text-align: center; }
+  thead th { background: var(--navy); color: var(--head-text); font-weight: 700; font-family: var(--serif); font-style: italic; font-size: 0.95rem; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr.total td { background: var(--total); font-weight: 700; }
+  td.xi { font-weight: 700; width: 46px; }
+  td input { text-align: center; padding: 6px 2px; min-width: 52px; font-variant-numeric: tabular-nums; }
+  td input[readonly] { background: var(--given); border-style: dashed; color: var(--muted); }
+  td input.bien { border-color: var(--ok-ink); box-shadow: inset 0 0 0 1px var(--ok-ink); }
+  td input.mal { border-color: var(--bad-ink); box-shadow: inset 0 0 0 1px var(--bad-ink); }
+
+  ul.car, ol.car { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+  details summary { cursor: pointer; color: var(--navy); font-weight: 600; }
+  .final { border: 2px solid var(--navy); }
+  .estado { font-size: 0.9rem; color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: 0.82rem; }
+  footer a { color: var(--navy); }
+  @media (max-width: 420px) { .card { padding: 14px 12px; } .sim { padding: 8px 6px; } th, td { padding: 3px 2px; } td input { min-width: 46px; font-size: 0.9rem; } }
+  @media (prefers-reduced-motion: no-preference) { button { transition: filter .15s; } button:hover { filter: brightness(1.1); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">Laboratorio de Estadística · Medidas de tendencia central</p>
+    <h1>Medidas de tendencia central: la balanza de la media</h1>
+    <p>Vas a calcular la media, la mediana y la moda de tus propias calificaciones y de otros conjuntos de datos, y a comprobarlas en una balanza donde cada dato es un bloque que puedes mover. Al final descargas tu actividad en PDF.</p>
+  </header>
+
+  <section class="card" aria-labelledby="t-datos">
+    <h2 class="plain" id="t-datos">Tus datos</h2>
+    <div class="field"><label for="nombre">Nombre completo</label><input type="text" id="nombre" autocomplete="name"></div>
+    <div class="field"><label for="grupo">Grupo</label><input type="text" id="grupo" inputmode="numeric"></div>
+    <p class="hint">Lo que escribas se guarda en este celular. Si cierras la página, al volver lo encontrarás aquí.</p>
+  </section>
+
+  <section class="card" aria-labelledby="t-intro">
+    <h2 class="plain" id="t-intro">Antes de empezar</h2>
+    <p>Las medidas de tendencia central nos ayudan a resumir y entender mejor los datos: nos dan un valor único que representa el centro de un conjunto de datos. En esta lección vas a calcularlas, analizarlas e interpretarlas en distintos contextos.</p>
+    <div class="nota"><b>Aprendizajes.</b> El alumnado: 1) calcula medidas de tendencia central con apoyo de herramientas tecnológicas; 2) interpreta los valores de las medidas de tendencia central y escoge la más adecuada para representar los datos en el contexto de una investigación o problema.</div>
+    <details>
+      <summary>Leer: media, mediana y moda</summary>
+      <div style="display:grid;gap:10px;margin-top:10px">
+        <h3>La media aritmética</h3>
+        <p>Es el promedio de un conjunto de datos: se suman todos los valores y se divide la suma entre la cantidad de valores. Para los datos <span class="sym">x</span><sub>1</sub>, <span class="sym">x</span><sub>2</sub>, …, <span class="sym">x<sub>n</sub></span>:</p>
+        <p class="formula"><span class="sym">x̄</span> = (<span class="sym">x</span><sub>1</sub> + <span class="sym">x</span><sub>2</sub> + ⋯ + <span class="sym">x<sub>n</sub></span>) / <span class="sym">n</span> = Σ<span class="sym">x<sub>i</sub></span> / <span class="sym">n</span></p>
+        <h3>La mediana</h3>
+        <p>La mediana (<span class="sym">x̃</span>) es el valor central de los datos ordenados: la mitad de los valores es menor o igual que ella y la otra mitad es mayor o igual. Si el número de datos es impar, es el valor del centro; si es par, es el promedio de los dos valores centrales.</p>
+        <p class="hint">Impar: 3, 5, <b>7</b>, 8, 10 → <span class="sym">x̃</span> = 7. &nbsp; Par: 3, <b>5, 7</b>, 8 → <span class="sym">x̃</span> = (5 + 7)/2 = 6.</p>
+        <h3>La moda</h3>
+        <p>La moda (<span class="sym">x̂</span>) es el valor o los valores que aparecen con mayor frecuencia. El conjunto es <b>unimodal</b> si un solo valor es el más repetido, <b>bimodal</b> si son dos, <b>multimodal</b> si son más de dos y <b>amodal</b> si ningún valor se repite.</p>
+      </div>
+    </details>
+    <div class="nota"><b>Cómo usar la balanza.</b> Cada bloque es un dato. Arrastra los bloques para cambiarlos de valor, sácalos a la cubeta o toma nuevos de ella. Mueve el triángulo de apoyo hasta que la tabla quede horizontal: ese punto de equilibrio es la media.</div>
+  </section>
+
+  <!-- ACTIVIDAD 1 -->
+  <section class="card" aria-labelledby="a1">
+    <div class="act"><span class="num">1</span><h2 id="a1">Explorando la media</h2></div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">1.</span>Escribe las calificaciones que obtuviste en tercer y cuarto semestre. Si alguna fue NP, reemplázala por 5.</p>
+      <div class="califs" id="califs"></div>
+      <div class="actions"><button type="button" class="secondary" id="masCalif">+ Agregar</button><button type="button" class="secondary" id="menosCalif">− Quitar la última</button></div>
+      <p class="flabel" style="margin-top:6px">Calcula la media de estas calificaciones.</p>
+      <div class="resp"><span class="lab">x̄ =</span><input type="text" id="a1_media" inputmode="decimal"></div>
+    </div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">2.</span>Pon tus calificaciones en la balanza: así se forma tu diagrama de puntos. Mueve el triángulo hasta que la balanza quede en equilibrio. ¿En qué valor queda? ¿Coincide con la media que calculaste?</p>
+      <div id="sim1"></div>
+      <label for="a1_q2">¿En qué valor se equilibró la balanza y coincide con tu cálculo?</label>
+      <textarea id="a1_q2"></textarea>
+    </div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">3.</span>En la balanza, arrastra una de tus calificaciones más bajas hasta el 10, o una de las más altas hasta el 5. Calcula la nueva media y anota tu resultado.</p>
+      <div class="resp"><span class="lab">Nueva x̄ =</span><input type="text" id="a1_nueva" inputmode="decimal"></div>
+      <p class="hint">Antes de cambiar el bloque, guarda la imagen de la balanza con tus datos originales. Después del cambio, guarda la segunda imagen.</p>
+    </div>
+    <div class="q field">
+      <label for="a1_q4"><span class="qn">4.</span>Reflexiona: ¿qué sucede con la media cuando un valor aumenta o disminuye significativamente? ¿Cómo afecta a la media?</label>
+      <textarea id="a1_q4"></textarea>
+    </div>
+  </section>
+
+  <!-- ACTIVIDAD 2 -->
+  <section class="card" aria-labelledby="a2">
+    <div class="act"><span class="num">2</span><h2 id="a2">Explorando la mediana</h2></div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">1.</span>Con el mismo conjunto de calificaciones, identifica la mediana. Recuerda: es el valor central cuando los datos están ordenados de menor a mayor. En la balanza tus datos ya aparecen ordenados.</p>
+      <label for="a2_orden">Escribe tus calificaciones ordenadas de menor a mayor</label>
+      <input type="text" id="a2_orden" inputmode="decimal">
+      <div class="resp"><span class="lab">x̃ =</span><input type="text" id="a2_mediana" inputmode="decimal"></div>
+      <div id="sim2"></div>
+    </div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">2.</span>En la balanza, cambia una de tus calificaciones más bajas por un 10, o una de las más altas por un 5. Encuentra la nueva mediana.</p>
+      <div class="resp"><span class="lab">Nueva x̃ =</span><input type="text" id="a2_nueva" inputmode="decimal"></div>
+    </div>
+    <div class="q field">
+      <label for="a2_q3"><span class="qn">3.</span>Reflexiona: ¿cómo afectó el cambio en los datos a la mediana? ¿Es la mediana más estable frente a cambios extremos en comparación con la media?</label>
+      <textarea id="a2_q3"></textarea>
+    </div>
+  </section>
+
+  <!-- ACTIVIDAD 3 -->
+  <section class="card" aria-labelledby="a3">
+    <div class="act"><span class="num">3</span><h2 id="a3">Explorando la moda</h2></div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">1.</span>Con el mismo conjunto de calificaciones, identifica la moda. La moda es:</p>
+      <div class="opc" role="radiogroup" aria-label="Tipo de moda">
+        <label><input type="radio" name="a3_tipo" value="Unimodal"> Unimodal</label>
+        <label><input type="radio" name="a3_tipo" value="Bimodal"> Bimodal</label>
+        <label><input type="radio" name="a3_tipo" value="Multimodal"> Multimodal</label>
+        <label><input type="radio" name="a3_tipo" value="Amodal"> Amodal</label>
+      </div>
+      <p class="flabel">Si la moda es unimodal escribe su valor (si es bimodal o multimodal, escribe todos separados por comas).</p>
+      <div class="resp"><span class="lab">x̂ =</span><input type="text" id="a3_moda" inputmode="decimal"></div>
+      <div id="sim3"></div>
+    </div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">2.</span>Cambia una de tus calificaciones más bajas por un 10, o una de las más altas por un 5, y encuentra la nueva moda.</p>
+      <div class="resp"><span class="lab">Nueva x̂ =</span><input type="text" id="a3_nueva" inputmode="decimal"></div>
+    </div>
+    <div class="q field">
+      <label for="a3_q3"><span class="qn">3.</span>Reflexiona: si tu moda fue unimodal, ¿cómo afectó el cambio en los datos a la moda? ¿Es la moda más estable frente a cambios extremos en comparación con la media?</label>
+      <textarea id="a3_q3"></textarea>
+    </div>
+  </section>
+
+  <!-- ACTIVIDAD 4 -->
+  <section class="card" aria-labelledby="a4">
+    <div class="act"><span class="num">4</span><h2 id="a4">Desviación y ajuste</h2></div>
+    <div class="q field">
+      <p class="flabel"><span class="qn">1.</span>Observa las calificaciones que un alumno del CCH obtuvo en tercer y cuarto semestre:</p>
+      <p class="formula"><span class="sym">X</span> = {5, 5, 6, 6, 7, 8, 8, 8, 9, 9, 9, 10}</p>
+      <p>donde <span class="sym">x̄</span> = 7.5, <span class="sym">x̃</span> = 8, <span class="sym">x̂</span><sub>1</sub> = 8 y <span class="sym">x̂</span><sub>2</sub> = 9. Completa la tabla calculando cuánto se desvía cada valor respecto a la media, la mediana, la moda 1 y la moda 2: a cada medida réstale el valor (por ejemplo, 7.5 − 5 = 2.5). Luego suma cada columna.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>x<sub>i</sub></th><th>x̄ − x<sub>i</sub></th><th>x̃ − x<sub>i</sub></th><th>x̂<sub>1</sub> − x<sub>i</sub></th><th>x̂<sub>2</sub> − x<sub>i</sub></th></tr></thead>
+          <tbody id="tablaDesv"></tbody>
+        </table>
+      </div>
+      <div class="actions"><button type="button" class="secondary" id="revisar4">Revisar mi tabla</button></div>
+      <p class="msg ok" id="msg4" hidden></p>
+      <p class="hint">Los recuadros grises ya están resueltos como ejemplo. Puedes usar punto o coma decimal.</p>
+      <div id="sim4"></div>
+    </div>
+    <div class="q field">
+      <label for="a4_q2"><span class="qn">2.</span>Observa los resultados de las sumas. ¿Cuál medida de tendencia central crees que mejor equilibre las desviaciones positivas y negativas en el conjunto de datos? ¿Por qué?</label>
+      <textarea id="a4_q2"></textarea>
+    </div>
+    <div class="q field">
+      <label for="a4_q3"><span class="qn">3.</span>Respecto a la comparación anterior y atendiendo a la condición de equilibrio, ¿cuál medida de tendencia central crees que represente mejor a un conjunto de datos?</label>
+      <textarea id="a4_q3"></textarea>
+    </div>
+  </section>
+
+  <!-- ACTIVIDAD 5 -->
+  <section class="card" aria-labelledby="a5">
+    <div class="act"><span class="num">5</span><h2 id="a5">¿Cuál medida representa mejor?</h2></div>
+    <p>Elige cada conjunto en la balanza, activa las tres medidas y observa.</p>
+    <div id="sim5"></div>
+    <div class="q field">
+      <label for="a5_q1"><span class="qn">1.</span>Con el conjunto <b>“Distribución simétrica”</b>, ¿qué observas de la media, la mediana y la moda? ¿Dónde queda el punto de equilibrio?</label>
+      <textarea id="a5_q1"></textarea>
+    </div>
+    <div class="q field">
+      <label for="a5_q2"><span class="qn">2.</span>Con el conjunto <b>“Tiempo de traslado al CCH”</b> anota la media, la mediana y la moda. Luego arrastra el bloque de 120 minutos a 60. ¿Qué medida cambió más? ¿Cuál representa mejor el tiempo típico de traslado del grupo? ¿Por qué?</label>
+      <textarea id="a5_q2"></textarea>
+    </div>
+    <div class="q field">
+      <label for="a5_q3"><span class="qn">3.</span>Con el conjunto <b>“Construye tu conjunto”</b>, saca bloques de la cubeta y forma un conjunto donde la media, la mediana y la moda sean iguales, y luego otro donde la media sea mayor que la mediana. Escribe los dos conjuntos que formaste y guarda la imagen de uno de ellos.</label>
+      <textarea id="a5_q3"></textarea>
+    </div>
+    <div class="q field">
+      <label for="a5_q4"><span class="qn">4.</span>Si la variable fuera cualitativa, por ejemplo el medio de transporte que usas para llegar al plantel, ¿cuál de las tres medidas podrías calcular? ¿Por qué no las otras dos?</label>
+      <textarea id="a5_q4"></textarea>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="t-car">
+    <h2 class="plain" id="t-car">Características de las medidas de tendencia central</h2>
+    <h3>La media aritmética <span class="sym">x̄</span></h3>
+    <ol class="car">
+      <li>En su cálculo están todos los valores del conjunto de datos, por lo que cada uno afecta a la media.</li>
+      <li>La suma de las desviaciones de los valores individuales respecto a la media es cero.</li>
+      <li>Aunque es confiable porque refleja todos los valores, puede ser afectada por los valores extremos; si la distribución es sesgada, la media no es un valor representativo.</li>
+    </ol>
+    <h3>La mediana <span class="sym">x̃</span></h3>
+    <ol class="car">
+      <li>Es un promedio de posición no afectado por los valores extremos.</li>
+      <li>En una distribución sesgada, la mediana no se desplaza del centro de los datos como lo hace la media.</li>
+    </ol>
+    <h3>La moda <span class="sym">x̂</span></h3>
+    <ol class="car">
+      <li>Representa más elementos que cualquier otro valor.</li>
+      <li>No permite conocer cómo se distribuye la mayor parte de los datos.</li>
+      <li>Como estadístico, varía mucho de una muestra a otra.</li>
+      <li>Cuando hay dos o más modas es difícil su interpretación.</li>
+    </ol>
+  </section>
+
+  <section class="card final" aria-labelledby="t-fin">
+    <h2 class="plain" id="t-fin">Entrega</h2>
+    <p class="estado" id="estado"></p>
+    <div class="actions"><button type="button" class="primary" id="btnPDF">Descargar mi actividad en PDF</button></div>
+    <p class="msg" id="msgPDF" hidden></p>
+    <p class="hint">El PDF incluye tus respuestas, tu tabla de desviaciones y las imágenes que guardaste de la balanza. Súbelo a Teams como te indique tu profesor.</p>
+  </section>
+
+  <footer>Laboratorio de Estadística · CCH-UNAM · <a href="https://temocbzc.github.io/Graficas_de_distribuciones_de_frecuencias/">Otras herramientas</a></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  // ===================== Estadísticos =====================
+  function estad(vals) {
+    const n = vals.length;
+    if (!n) return { n: 0 };
+    const orden = [...vals].sort((a, b) => a - b);
+    const suma = orden.reduce((a, b) => a + b, 0);
+    const media = suma / n;
+    const mediana = n % 2 ? orden[(n - 1) / 2] : (orden[n / 2 - 1] + orden[n / 2]) / 2;
+    const frec = new Map(); orden.forEach(v => frec.set(v, (frec.get(v) || 0) + 1));
+    const max = Math.max(...frec.values());
+    const modas = max === 1 ? [] : [...frec.entries()].filter(([, f]) => f === max).map(([v]) => v);
+    const tipo = max === 1 ? "amodal" : modas.length === 1 ? "unimodal" : modas.length === 2 ? "bimodal" : "multimodal";
+    return { n, orden, suma, media, mediana, frec, modas, tipo };
+  }
+  const fmt = (v) => { const r = Math.round(v * 100) / 100; return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(/0$/, ""); };
+
+  // ===================== Simulador: la balanza =====================
+  const COL = { bloque: "#2a78d6", bloqueBorde: "#1c5cab", media: "#eb6834", mediana: "#6250d6", moda: "#008300",
+                tabla: "#8B6B4A", tablaBorde: "#6B4F33", apoyo: "#52514e", tinta: "#1B2433", sec: "#5A6578",
+                izq: "#2a78d6", der: "#eb6834", cubeta: "#9AA6B8" };
+  const SANS = '"Source Sans 3", "Segoe UI", Roboto, Arial, sans-serif';
+
+  class Balanza {
+    constructor(host, cfg) {
+      this.cfg = Object.assign({ titulo: "Balanza", lo: 5, hi: 10, paso: 1, valores: [], medidas: ["media"], conjuntos: null, alCambiar: null, foto: null }, cfg);
+      this.host = host;
+      this.mostrar = { media: false, mediana: false, moda: false, desv: false };
+      this.bloques = []; this.sig = 1; this.apoyo = null; this.angulo = 0; this.arrastre = null;
+      this.construirUI();
+      this.setDatos(this.cfg.valores, this.cfg);
+      new ResizeObserver(() => this.medir()).observe(this.cv);
+      const anim = () => { this.paso(); requestAnimationFrame(anim); };
+      requestAnimationFrame(anim);
+    }
+    construirUI() {
+      const c = this.cfg, h = this.host;
+      h.className = "sim";
+      const nombres = { media: ["Media x̄", COL.media], mediana: ["Mediana x̃", COL.mediana], moda: ["Moda x̂", COL.moda], desv: ["Desviaciones", COL.der] };
+      h.innerHTML = `
+        <div class="sim-top"><span class="titulo">${c.titulo}</span>
+          ${c.medidas.map(m => `<label class="chk"><input type="checkbox" data-m="${m}"><span class="dot" style="background:${nombres[m][1]}"></span>${nombres[m][0]}</label>`).join("")}
+        </div>
+        ${c.conjuntos ? `<select aria-label="Conjunto de datos">${c.conjuntos.map((s, i) => `<option value="${i}">${s.nombre}</option>`).join("")}</select>` : ""}
+        <canvas></canvas>
+        <div class="sim-lectura"></div>
+        <div class="sim-acciones">
+          ${c.cargar ? `<button type="button" class="primary" data-a="cargar">${c.cargar}</button>` : ""}
+          <button type="button" class="secondary" data-a="media" hidden>Llevar el apoyo a la media</button>
+          ${c.fotos ? c.fotos.map(f => `<button type="button" class="secondary" data-foto="${f.id}">📷 ${f.texto}</button>`).join("") : ""}
+          <span class="guardada" hidden></span>
+        </div>`;
+      this.cv = h.querySelector("canvas"); this.ctx = this.cv.getContext("2d");
+      this.lectura = h.querySelector(".sim-lectura"); this.aviso = h.querySelector(".guardada");
+      h.querySelectorAll("input[data-m]").forEach(el => el.addEventListener("change", () => { this.mostrar[el.dataset.m] = el.checked; this.actualizar(); }));
+      const sel = h.querySelector("select");
+      if (sel) { this.sel = sel; sel.addEventListener("change", () => this.usarConjunto(+sel.value)); }
+      h.querySelector('[data-a="media"]').addEventListener("click", () => {
+        const e = estad(this.valores()); if (e.n) { this.apoyo = e.media; this.actualizar(); }
+      });
+      const bc = h.querySelector('[data-a="cargar"]'); if (bc) bc.addEventListener("click", () => this.cfg.alCargar && this.cfg.alCargar(this));
+      h.querySelectorAll("[data-foto]").forEach(b => b.addEventListener("click", () => this.cfg.foto && this.cfg.foto(b.dataset.foto, this)));
+      this.cv.addEventListener("pointerdown", (e) => this.abajo(e));
+      this.cv.addEventListener("pointermove", (e) => this.mover(e));
+      this.cv.addEventListener("pointerup", (e) => this.arriba(e));
+      this.cv.addEventListener("pointercancel", (e) => this.arriba(e));
+    }
+    usarConjunto(i) {
+      const s = this.cfg.conjuntos[i];
+      this.setDatos(typeof s.valores === "function" ? s.valores() : s.valores, s);
+    }
+    setDatos(vals, rango) {
+      if (rango) { this.lo = rango.lo; this.hi = rango.hi; this.pasoV = rango.paso; this.unidad = rango.unidad || ""; }
+      this.bloques = vals.map(v => ({ id: this.sig++, v }));
+      const e = estad(vals);
+      let ap = (this.lo + this.hi) / 2;
+      if (e.n && Math.abs(ap - e.media) < this.pasoV * 0.75) ap = e.media > ap ? Math.max(this.lo, ap - 2 * this.pasoV) : Math.min(this.hi, ap + 2 * this.pasoV);
+      this.apoyo = ap;
+      this.angulo = 0;
+      this.medir(); this.actualizar();
+    }
+    valores() { return this.bloques.map(b => b.v); }
+    medir() {
+      const W = Math.max(280, Math.round(this.cv.clientWidth || this.host.clientWidth - 20));
+      const pila = Math.max(5, ...this.pilas().map(p => p.length + 2));
+      this.W = W;
+      const pasos = (this.hi - this.lo) / this.pasoV + 2;
+      this.esp = (W - 40) / pasos;
+      this.bs = Math.max(12, Math.min(30, this.esp * 0.84));
+      this.yTabla = 58 + pila * this.bs;
+      const H = Math.round(this.yTabla + 96);
+      if (this.H !== H || this.cv.width !== Math.round(W * this.dpr())) {
+        this.H = H;
+        const d = this.dpr();
+        this.cv.width = W * d; this.cv.height = H * d; this.cv.style.height = H + "px";
+      }
+      this.dibujar();
+    }
+    dpr() { return Math.min(3, window.devicePixelRatio || 1); }
+    X(v) { return 20 + (v - this.lo + this.pasoV) / this.pasoV * this.esp; }
+    V(x) { return (x - 20) / this.esp * this.pasoV + this.lo - this.pasoV; }
+    ajustar(v) { return Math.min(this.hi, Math.max(this.lo, Math.round((v - this.lo) / this.pasoV) * this.pasoV + this.lo)); }
+    pilas() {
+      const m = new Map();
+      this.bloques.forEach(b => { if (this.arrastre && this.arrastre.tipo === "bloque" && this.arrastre.b === b) return; if (!m.has(b.v)) m.set(b.v, []); m.get(b.v).push(b); });
+      return [...m.values()];
+    }
+    cubeta() { return { x: this.W - 92, y: 8, w: 82, h: 42 }; }
+    // Coordenadas del puntero sin la inclinación de la tabla
+    local(e) {
+      const r = this.cv.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const px = this.X(this.apoyo), py = this.yTabla, a = -this.angulo;
+      const dx = x - px, dy = y - py;
+      return { x, y, lx: px + dx * Math.cos(a) - dy * Math.sin(a), ly: py + dx * Math.sin(a) + dy * Math.cos(a) };
+    }
+    abajo(e) {
+      const p = this.local(e), c = this.cubeta();
+      // Apoyo (triángulo)
+      const ax = this.X(this.apoyo), ay = this.yTabla + 14;
+      if (Math.abs(p.x - ax) < 28 && p.y > ay - 4 && p.y < ay + 44) { this.arrastre = { tipo: "apoyo" }; }
+      else if (this.cfg.conCubeta !== false && p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) {
+        const b = { id: this.sig++, v: null }; this.bloques.push(b); this.arrastre = { tipo: "bloque", b, x: p.x, y: p.y, nuevo: true };
+      } else {
+        // Bloque: se toma el de arriba de la pila tocada
+        let elegido = null;
+        this.pilas().forEach(pila => {
+          const v = pila[0].v, x = this.X(v);
+          if (Math.abs(p.lx - x) <= this.bs / 2 + 4) {
+            const top = this.yTabla - 6 - pila.length * this.bs;
+            if (p.ly >= top - 8 && p.ly <= this.yTabla) elegido = pila[pila.length - 1];
+          }
+        });
+        if (elegido) this.arrastre = { tipo: "bloque", b: elegido, x: p.x, y: p.y, lx: p.lx };
+      }
+      if (this.arrastre) { this.cv.setPointerCapture(e.pointerId); e.preventDefault(); this.dibujar(); }
+    }
+    mover(e) {
+      if (!this.arrastre) return;
+      const p = this.local(e);
+      if (this.arrastre.tipo === "apoyo") {
+        this.apoyo = Math.min(this.hi, Math.max(this.lo, Math.round(this.V(p.x) * 100) / 100));
+        const m = estad(this.valores()).media;
+        if (Number.isFinite(m) && Math.abs(this.apoyo - m) < this.pasoV * 0.04) this.apoyo = m;
+        this.actualizar();
+      } else { this.arrastre.x = p.x; this.arrastre.y = p.y; this.arrastre.lx = p.lx; this.dibujar(); }
+    }
+    arriba(e) {
+      if (!this.arrastre) return;
+      const a = this.arrastre; this.arrastre = null;
+      if (a.tipo === "bloque") {
+        const c = this.cubeta();
+        const enCubeta = a.x >= c.x - 6 && a.x <= c.x + c.w + 6 && a.y >= c.y - 6 && a.y <= c.y + c.h + 6;
+        if (enCubeta || (a.nuevo && a.lx == null)) this.bloques = this.bloques.filter(b => b !== a.b);
+        else a.b.v = this.ajustar(this.V(a.lx));
+        this.medir();
+      }
+      this.actualizar();
+    }
+    actualizar() {
+      const e = estad(this.valores());
+      const u = this.unidad ? " " + this.unidad : "";
+      const T = e.n ? e.orden.reduce((s, v) => s + (v - this.apoyo), 0) : 0;
+      this.objetivo = e.n ? Math.max(-0.14, Math.min(0.14, T / (e.n * (this.hi - this.lo)) * 1.6)) : 0;
+      const eq = e.n && Math.abs(this.apoyo - e.media) < 1e-9;
+      const partes = [`<span><b>n</b> = ${e.n}</span>`, `<span>Apoyo en <b>${fmt(this.apoyo)}</b>${u}</span>`];
+      if (e.n) partes.push(eq ? `<span class="eq">⚖ En equilibrio</span>` : `<span>Se inclina a la ${T > 0 ? "derecha" : "izquierda"}</span>`);
+      const bm = this.host.querySelector('[data-a="media"]'); if (bm) bm.hidden = !(this.mostrar.media && e.n);
+      if (this.mostrar.media && e.n) partes.push(`<span style="color:${COL.media}"><b style="color:inherit">x̄</b> = ${fmt(e.media)}</span>`);
+      if (this.mostrar.mediana && e.n) partes.push(`<span style="color:${COL.mediana}"><b style="color:inherit">x̃</b> = ${fmt(e.mediana)}</span>`);
+      if (this.mostrar.moda && e.n) partes.push(`<span style="color:${COL.moda}"><b style="color:inherit">x̂</b> = ${e.modas.length ? e.modas.map(fmt).join(" y ") : "no hay"} (${e.tipo})</span>`);
+      if (this.mostrar.desv && e.n) partes.push(`<span>Σ(x̄ − x<sub>i</sub>) = <b>${fmt(e.orden.reduce((s, v) => s + (e.media - v), 0) + 0)}</b></span>`);
+      this.lectura.innerHTML = partes.join("");
+      this.e = e;
+      this.dibujar();
+      if (this.cfg.alCambiar) this.cfg.alCambiar(this);
+    }
+    paso() {
+      const d = (this.objetivo || 0) - this.angulo;
+      if (Math.abs(d) > 1e-4) { this.angulo += d * 0.15; this.dibujar(); }
+    }
+    dibujar(ctxExt, escala) {
+      const ctx = ctxExt || this.ctx, W = this.W, H = this.H;
+      if (!W) return;
+      const d = escala || this.dpr();
+      ctx.setTransform(d, 0, 0, d, 0, 0);
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+      const e = this.e || estad(this.valores());
+      const bs = this.bs, yT = this.yTabla, px = this.X(this.apoyo);
+
+      // Suelo y apoyo
+      ctx.fillStyle = "#E4E9F1"; ctx.fillRect(0, yT + 50, W, H - yT - 50);
+      ctx.beginPath(); ctx.moveTo(px, yT + 14); ctx.lineTo(px - 18, yT + 50); ctx.lineTo(px + 18, yT + 50); ctx.closePath();
+      ctx.fillStyle = COL.apoyo; ctx.fill();
+
+      // Cubeta
+      if (this.cfg.conCubeta !== false) {
+        const c = this.cubeta();
+        ctx.fillStyle = "#EEF2F8"; ctx.strokeStyle = COL.cubeta; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + 8, c.y + c.h); ctx.lineTo(c.x + c.w - 8, c.y + c.h); ctx.lineTo(c.x + c.w, c.y); ctx.closePath(); ctx.fill(); ctx.stroke();
+        for (let k = 0; k < 3; k++) { ctx.fillStyle = COL.bloque; ctx.fillRect(c.x + 16 + k * 18, c.y + 14 + (k % 2) * 4, 14, 14); }
+        ctx.fillStyle = COL.sec; ctx.font = `600 11px ${SANS}`; ctx.textAlign = "center"; ctx.fillText("Cubeta", c.x + c.w / 2, c.y + c.h + 13);
+      }
+
+      // Tabla inclinada con todo lo que va encima
+      ctx.save(); ctx.translate(px, yT); ctx.rotate(this.angulo); ctx.translate(-px, -yT);
+      const x0 = this.X(this.lo - this.pasoV * 0.6), x1 = this.X(this.hi + this.pasoV * 0.6);
+      ctx.fillStyle = COL.tabla; ctx.fillRect(x0, yT - 6, x1 - x0, 20);
+      ctx.strokeStyle = COL.tablaBorde; ctx.lineWidth = 1; ctx.strokeRect(x0, yT - 6, x1 - x0, 20);
+      // Marcas y números
+      const nPasos = Math.round((this.hi - this.lo) / this.pasoV);
+      ctx.font = `600 ${Math.max(10, Math.min(13, this.esp * 0.5))}px ${SANS}`;
+      const anchoNum = ctx.measureText(fmt(this.hi)).width + 6;
+      const saltoEt = Math.max(1, Math.ceil(anchoNum / this.esp));
+      for (let k = 0; k <= nPasos; k++) {
+        const v = this.lo + k * this.pasoV, x = this.X(v);
+        ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, yT - 6); ctx.lineTo(x, yT - 1); ctx.stroke();
+        if (k % saltoEt === 0) { ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(fmt(v), x, yT + 5); ctx.textBaseline = "alphabetic"; }
+      }
+      // Desviaciones (cada bloque respecto a la media)
+      const pilas = this.pilas();
+      if (this.mostrar.desv && e.n) {
+        const xm = this.X(e.media);
+        pilas.forEach(pila => pila.forEach((b, j) => {
+          const x = this.X(b.v), y = yT - 6 - j * bs - bs / 2;
+          ctx.strokeStyle = b.v < e.media ? COL.izq : COL.der; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(xm, y); ctx.lineTo(x, y); ctx.stroke();
+        }));
+      }
+      // Bloques
+      pilas.forEach(pila => pila.forEach((b, j) => this.bloque(ctx, this.X(b.v), yT - 6 - j * bs - bs / 2, bs)));
+      // Mediana
+      if (this.mostrar.mediana && e.n) {
+        const x = this.X(e.mediana);
+        ctx.strokeStyle = COL.mediana; ctx.lineWidth = 2.5; ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(x, yT - 6); ctx.lineTo(x, 48); ctx.stroke(); ctx.setLineDash([]);
+        this.etiqueta(ctx, "x̃ = " + fmt(e.mediana), x, 40, COL.mediana);
+      }
+      // Moda
+      if (this.mostrar.moda && e.n) {
+        e.modas.forEach(v => {
+          const pila = pilas.find(p => p[0].v === v); const alto = pila ? pila.length : 0;
+          const x = this.X(v), y = yT - 6 - alto * bs - 10;
+          ctx.fillStyle = COL.moda; ctx.beginPath(); ctx.moveTo(x, y + 6); ctx.lineTo(x - 7, y - 6); ctx.lineTo(x + 7, y - 6); ctx.closePath(); ctx.fill();
+          this.etiqueta(ctx, "x̂", x, y - 12, COL.moda);
+        });
+      }
+      ctx.restore();
+
+      // Media: marca bajo la tabla (no gira, indica dónde está el equilibrio)
+      if (this.mostrar.media && e.n) {
+        const x = this.X(e.media), y = yT + 62;
+        ctx.fillStyle = COL.media; ctx.beginPath(); ctx.moveTo(x, y - 8); ctx.lineTo(x - 8, y + 4); ctx.lineTo(x + 8, y + 4); ctx.closePath(); ctx.fill();
+        this.etiqueta(ctx, "x̄ = " + fmt(e.media), x, y + 18, COL.media, true);
+      }
+      // Bloque arrastrado
+      if (this.arrastre && this.arrastre.tipo === "bloque" && this.arrastre.x != null) {
+        ctx.globalAlpha = 0.85; this.bloque(ctx, this.arrastre.x, this.arrastre.y, bs); ctx.globalAlpha = 1;
+      }
+      if (!e.n) { ctx.fillStyle = COL.sec; ctx.font = `600 13px ${SANS}`; ctx.textAlign = "center"; ctx.fillText(this.cfg.vacio || "Arrastra bloques desde la cubeta", W / 2, yT - 30); }
+    }
+    bloque(ctx, x, y, bs) {
+      const r = 3, s = bs - 2, l = x - s / 2, t = y - s / 2;
+      ctx.fillStyle = COL.bloque; ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(l + r, t); ctx.arcTo(l + s, t, l + s, t + s, r); ctx.arcTo(l + s, t + s, l, t + s, r); ctx.arcTo(l, t + s, l, t, r); ctx.arcTo(l, t, l + s, t, r); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+    etiqueta(ctx, t, x, y, color, abajo) {
+      ctx.font = `700 12px ${SANS}`; const w = ctx.measureText(t).width + 10;
+      const xx = Math.min(this.W - w / 2 - 2, Math.max(w / 2 + 2, x));
+      ctx.fillStyle = "#FFFFFF"; ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.rect(xx - w / 2, y - 9, w, 18); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(t, xx, y); ctx.textBaseline = "alphabetic";
+    }
+    // Imagen JPG para el reporte (incluye un pie con los valores)
+    foto(titulo) {
+      const e = estad(this.valores()), W = this.W, H = this.H, esc = 2;
+      const med = document.createElement("canvas").getContext("2d");
+      med.font = `700 14px ${SANS}`;
+      const lt = partir(med, titulo, W - 20);
+      med.font = `400 13px ${SANS}`;
+      let lineas = partir(med, `n = ${e.n}   ·   Datos: ${e.n ? e.orden.map(fmt).join(", ") : "—"}`, W - 20);
+      if (e.n) lineas = lineas.concat(partir(med, `Media = ${fmt(e.media)}   ·   Mediana = ${fmt(e.mediana)}`, W - 20),
+        partir(med, `Moda = ${e.modas.length ? e.modas.map(fmt).join(" y ") : "no hay"} (${e.tipo})   ·   Apoyo en ${fmt(this.apoyo)}`, W - 20));
+      const arriba = 10 + lt.length * 18, pie = 10 + lineas.length * 18;
+      const cv = document.createElement("canvas"); cv.width = W * esc; cv.height = (arriba + H + pie) * esc;
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(esc, 0, 0, esc, 0, 0); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, arriba + H + pie);
+      ctx.fillStyle = "#1F3864"; ctx.font = `700 14px ${SANS}`; ctx.textAlign = "left";
+      lt.forEach((t, k) => ctx.fillText(t, 10, 20 + k * 18));
+      const tmp = document.createElement("canvas"); tmp.width = W * esc; tmp.height = H * esc;
+      this.dibujar(tmp.getContext("2d"), esc);
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(tmp, 0, arriba * esc);
+      ctx.setTransform(esc, 0, 0, esc, 0, 0);
+      ctx.fillStyle = "#1B2433"; ctx.font = `400 13px ${SANS}`;
+      lineas.forEach((t, k) => ctx.fillText(t, 10, arriba + H + 20 + k * 18));
+      return { img: cv.toDataURL("image/jpeg", 0.9), w: cv.width, h: cv.height };
+    }
+  }
+  function partir(ctx, texto, ancho) {
+    const pal = texto.split(" "); const out = []; let act = "";
+    pal.forEach(w => { const pr = act ? act + " " + w : w; if (ctx.measureText(pr).width > ancho && act) { out.push(act.trim()); act = w; } else act = pr; });
+    if (act) out.push(act.trim()); return out;
+  }
+  function recortar(ctx, t, ancho) { if (ctx.measureText(t).width <= ancho) return t; let s = t; while (s.length > 1 && ctx.measureText(s + "…").width > ancho) s = s.slice(0, -1); return s + "…"; }
+
+  // ===================== Calificaciones (Actividad 1) =====================
+  let nCalifs = 12;
+  function pintarCalifs(valores) {
+    const caja = $("califs"); caja.innerHTML = "";
+    for (let i = 0; i < nCalifs; i++) {
+      const d = document.createElement("div"); d.className = "cel";
+      d.innerHTML = `<span>Materia ${i + 1}</span><input type="text" inputmode="numeric" maxlength="2" aria-label="Calificación ${i + 1}" data-c="${i}">`;
+      caja.appendChild(d);
+      const inp = d.querySelector("input"); inp.value = (valores && valores[i] != null) ? valores[i] : "";
+      inp.addEventListener("input", () => { programarGuardado(); });
+    }
+  }
+  function leerCalifs() {
+    const out = [], malos = [];
+    document.querySelectorAll("#califs input").forEach((inp, i) => {
+      const t = inp.value.trim().toUpperCase(); if (!t) return;
+      if (t === "NP") { out.push(5); return; }
+      const v = Number(t.replace(",", "."));
+      if (Number.isInteger(v) && v >= 5 && v <= 10) out.push(v); else malos.push(i + 1);
+    });
+    return { out, malos };
+  }
+  $("masCalif").addEventListener("click", () => { const v = textosCalifs(); nCalifs = Math.min(20, nCalifs + 1); pintarCalifs(v); programarGuardado(); });
+  $("menosCalif").addEventListener("click", () => { const v = textosCalifs(); nCalifs = Math.max(3, nCalifs - 1); pintarCalifs(v); programarGuardado(); });
+  const textosCalifs = () => [...document.querySelectorAll("#califs input")].map(i => i.value);
+
+  // ===================== Fotos para el reporte =====================
+  const fotos = {};
+  const NOMBRE_FOTO = {
+    f1: "Actividad 1. Mis calificaciones en la balanza",
+    f1b: "Actividad 1. Después de cambiar una calificación",
+    f2: "Actividad 2. La mediana de mis calificaciones",
+    f3: "Actividad 3. La moda de mis calificaciones",
+    f5: "Actividad 5. Mi conjunto de datos"
+  };
+  function tomarFoto(id, sim) {
+    if (!sim.valores().length) { avisar(sim, "Primero pon datos en la balanza.", false); return; }
+    fotos[id] = sim.foto(NOMBRE_FOTO[id]);
+    avisar(sim, "✓ Imagen guardada para el reporte", true);
+    programarGuardado();
+  }
+  function avisar(sim, t, ok) { sim.aviso.textContent = t; sim.aviso.style.color = ok ? "" : "var(--warn-ink)"; sim.aviso.hidden = false; clearTimeout(sim._t); sim._t = setTimeout(() => sim.aviso.hidden = true, 3500); }
+
+  function cargarCalifs(sim) {
+    const { out, malos } = leerCalifs();
+    if (malos.length) { avisar(sim, `Revisa la materia ${malos.join(", ")}: usa números enteros del 5 al 10 o NP.`, false); return; }
+    if (out.length < 2) { avisar(sim, "Escribe tus calificaciones en la pregunta 1.", false); return; }
+    sim.setDatos(out, RANGO_CALIF);
+  }
+  const RANGO_CALIF = { lo: 5, hi: 10, paso: 1 };
+
+  // ===================== Simuladores =====================
+  const sim1 = new Balanza($("sim1"), { titulo: "Balanza 1", medidas: ["media"], cargar: "Poner mis calificaciones", alCargar: cargarCalifs, ...RANGO_CALIF,
+    fotos: [{ id: "f1", texto: "Guardar imagen (original)" }, { id: "f1b", texto: "Guardar imagen (con el cambio)" }], foto: tomarFoto, vacio: "Toca “Poner mis calificaciones”" });
+  const sim2 = new Balanza($("sim2"), { titulo: "Balanza 2", medidas: ["mediana", "media"], cargar: "Poner mis calificaciones", alCargar: cargarCalifs, ...RANGO_CALIF,
+    fotos: [{ id: "f2", texto: "Guardar imagen" }], foto: tomarFoto, vacio: "Toca “Poner mis calificaciones”" });
+  const sim3 = new Balanza($("sim3"), { titulo: "Balanza 3", medidas: ["moda", "mediana", "media"], cargar: "Poner mis calificaciones", alCargar: cargarCalifs, ...RANGO_CALIF,
+    fotos: [{ id: "f3", texto: "Guardar imagen" }], foto: tomarFoto, vacio: "Toca “Poner mis calificaciones”" });
+  const X4 = [5, 5, 6, 6, 7, 8, 8, 8, 9, 9, 9, 10];
+  const sim4 = new Balanza($("sim4"), { titulo: "Las calificaciones del alumno", medidas: ["desv", "media", "mediana", "moda"], valores: X4, ...RANGO_CALIF, conCubeta: false });
+  const CONJUNTOS = [
+    { nombre: "Distribución simétrica", valores: [6, 7, 7, 8, 8, 8, 9, 9, 10], lo: 5, hi: 10, paso: 1 },
+    { nombre: "Tiempo de traslado al CCH (minutos)", valores: [10, 20, 20, 20, 30, 30, 40, 50, 60, 120], lo: 0, hi: 130, paso: 10, unidad: "min" },
+    { nombre: "Calificaciones del alumno (Actividad 4)", valores: X4, lo: 5, hi: 10, paso: 1 },
+    { nombre: "Mis calificaciones", valores: () => leerCalifs().out, lo: 5, hi: 10, paso: 1 },
+    { nombre: "Construye tu conjunto (0 a 10)", valores: [], lo: 0, hi: 10, paso: 1 }
+  ];
+  const sim5 = new Balanza($("sim5"), { titulo: "Balanza 5", medidas: ["media", "mediana", "moda"], conjuntos: CONJUNTOS, valores: CONJUNTOS[0].valores, ...CONJUNTOS[0],
+    fotos: [{ id: "f5", texto: "Guardar imagen" }], foto: tomarFoto });
+
+  // ===================== Actividad 4: tabla de desviaciones =====================
+  const MEDIDAS4 = [7.5, 8, 8, 9];
+  const DADAS = { "0-0": 1, "0-1": 1, "0-2": 1, "0-3": 1, "2-3": 1, "5-0": 1, "8-2": 1, "11-1": 1 };
+  const num = (t) => { const v = Number(String(t).trim().replace(",", ".")); return String(t).trim() === "" ? null : v; };
+  (function pintarTabla4() {
+    const tb = $("tablaDesv");
+    X4.forEach((x, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="xi">${x}</td>` + MEDIDAS4.map((m, j) => {
+        const id = `d${i}_${j}`, dada = DADAS[`${i}-${j}`];
+        return `<td><input type="text" inputmode="decimal" id="${id}" ${dada ? `readonly value="${fmt(m - x)}"` : ""} aria-label="Fila ${i + 1}, columna ${j + 1}"></td>`;
+      }).join("");
+      tb.appendChild(tr);
+    });
+    const tot = document.createElement("tr"); tot.className = "total";
+    tot.innerHTML = `<td>Total</td>` + MEDIDAS4.map((m, j) => `<td><input type="text" inputmode="decimal" id="tot_${j}" aria-label="Total columna ${j + 1}"></td>`).join("");
+    tb.appendChild(tot);
+  })();
+  const CELDAS4 = [];
+  X4.forEach((x, i) => MEDIDAS4.forEach((m, j) => { if (!DADAS[`${i}-${j}`]) CELDAS4.push(`d${i}_${j}`); }));
+  MEDIDAS4.forEach((m, j) => CELDAS4.push(`tot_${j}`));
+  function correcto(id) {
+    if (id.startsWith("tot_")) { const j = +id.slice(4); return X4.reduce((s, x) => s + (MEDIDAS4[j] - x), 0); }
+    const [i, j] = id.slice(1).split("_").map(Number); return MEDIDAS4[j] - X4[i];
+  }
+  $("revisar4").addEventListener("click", () => {
+    let bien = 0, vacias = 0;
+    CELDAS4.forEach(id => {
+      const el = $(id), v = num(el.value); el.classList.remove("bien", "mal");
+      if (v === null) { vacias++; return; }
+      if (Math.abs(v - correcto(id)) < 1e-6) { el.classList.add("bien"); bien++; } else el.classList.add("mal");
+    });
+    const m = $("msg4"); const total = CELDAS4.length;
+    m.className = "msg " + (bien === total ? "ok" : "warn");
+    m.textContent = bien === total ? "¡Toda la tabla está correcta!" : `Correctas: ${bien} de ${total}.` + (vacias ? ` Te faltan ${vacias} por llenar.` : "") + " Los recuadros en rojo tienen un error: revisa el signo y la resta.";
+    m.hidden = false;
+  });
+
+  // ===================== Guardado =====================
+  const CLAVE = "lab-estadistica-tendencia-v1";
+  const TEXTOS = ["nombre", "grupo", "a1_media", "a1_q2", "a1_nueva", "a1_q4", "a2_orden", "a2_mediana", "a2_nueva", "a2_q3", "a3_moda", "a3_nueva", "a3_q3", "a4_q2", "a4_q3", "a5_q1", "a5_q2", "a5_q3", "a5_q4"];
+  let tGuardar = null;
+  function programarGuardado() { clearTimeout(tGuardar); tGuardar = setTimeout(guardar, 400); }
+  function guardar() {
+    const s = { califs: textosCalifs(), nCalifs, fotos };
+    TEXTOS.concat(CELDAS4).forEach(id => s[id] = $(id).value);
+    const tipo = document.querySelector('input[name="a3_tipo"]:checked'); s.a3_tipo = tipo ? tipo.value : "";
+    try { localStorage.setItem(CLAVE, JSON.stringify(s)); } catch (e) {
+      try { const sinFotos = Object.assign({}, s, { fotos: {} }); localStorage.setItem(CLAVE, JSON.stringify(sinFotos)); } catch (e2) {}
+    }
+    estado();
+  }
+  function cargar() {
+    let s = null; try { s = JSON.parse(localStorage.getItem(CLAVE) || "null"); } catch (e) {}
+    if (!s) { pintarCalifs([]); return; }
+    nCalifs = s.nCalifs || 12; pintarCalifs(s.califs || []);
+    TEXTOS.concat(CELDAS4).forEach(id => { if (s[id] != null) $(id).value = s[id]; });
+    if (s.a3_tipo) { const r = document.querySelector(`input[name="a3_tipo"][value="${s.a3_tipo}"]`); if (r) r.checked = true; }
+    Object.assign(fotos, s.fotos || {});
+    const { out, malos } = leerCalifs();
+    if (!malos.length && out.length >= 2) [sim1, sim2, sim3].forEach(sm => sm.setDatos(out, RANGO_CALIF));
+  }
+  TEXTOS.concat(CELDAS4).forEach(id => $(id).addEventListener("input", programarGuardado));
+  document.querySelectorAll('input[name="a3_tipo"]').forEach(r => r.addEventListener("change", programarGuardado));
+
+  function estado() {
+    const resp = TEXTOS.slice(2).filter(id => $(id).value.trim()).length + (document.querySelector('input[name="a3_tipo"]:checked') ? 1 : 0);
+    const nf = Object.keys(fotos).length;
+    $("estado").textContent = `Llevas ${resp} de ${TEXTOS.length - 1} respuestas y ${nf} de 5 imágenes de la balanza. Tu avance se guarda en este celular.`;
+  }
+
+  // ===================== PDF =====================
+  function generarPDF() {
+    const msg = $("msgPDF"); msg.hidden = true;
+    const falla = (t) => { msg.className = "msg warn"; msg.textContent = t; msg.hidden = false; };
+    if (!window.jspdf) return falla("No se pudo cargar el generador de PDF. Revisa tu conexión a internet y recarga la página (tus respuestas no se pierden).");
+    const nombre = $("nombre").value.trim();
+    if (!nombre) { $("nombre").focus(); return falla("Escribe tu nombre al inicio de la página antes de descargar."); }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "letter" });
+    const W = 215.9, H = 279.4, M = 18, ancho = W - 2 * M;
+    let y = M;
+    const navy = [31, 56, 100], gris = [90, 101, 120], tinta = [27, 36, 51];
+    const salto = (alto) => { if (y + alto > H - M) { doc.addPage(); y = M; } };
+    // Las fuentes básicas del PDF no traen los símbolos x̄, x̃, x̂ ni Σ: se escriben con palabras
+    const limpiar = (s) => s.replace(/x̄/g, "media").replace(/x̃/g, "mediana").replace(/x̂/g, "moda").replace(/Σ/g, "suma ")
+      .replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/−/g, "-").replace(/⋯/g, "...").replace(/📷\s?/g, "")
+      .replace(/[^\x00-\xFF—–…€]/g, "");
+    const texto = (t, tam = 10.5, estilo = "normal", color = tinta, inter = 1.35) => {
+      t = limpiar(t); doc.setFont("helvetica", estilo); doc.setFontSize(tam); doc.setTextColor(...color);
+      const lineas = doc.splitTextToSize(t, ancho), h = tam * 0.3528 * inter;
+      lineas.forEach(l => { salto(h); doc.text(l, M, y + h * 0.8); y += h; });
+    };
+    const esp = (mm) => { y += mm; };
+    const titulo = (t, siguiente = 20) => { esp(3); salto(12 + siguiente); doc.setFillColor(...navy); doc.rect(M, y, ancho, 8, "F"); doc.setFont("helvetica", "bold"); doc.setFontSize(11.5); doc.setTextColor(255, 255, 255); doc.text(limpiar(t), M + 3, y + 5.6); y += 11; };
+    const pregunta = (p, r) => { texto(p, 10, "bold", navy); r = (r || "").trim(); texto(r || "(sin respuesta)", 10.5, r ? "normal" : "italic", r ? tinta : gris); esp(3); };
+    const etq = (sel) => { const el = document.querySelector(sel); return el ? el.innerText.replace(/\s+/g, " ").trim() : ""; };
+    const altoFoto = (f) => Math.min(ancho * f.h / f.w, 120);
+    const foto = (id) => {
+      const f = fotos[id];
+      if (!f) { texto(`(No guardaste la imagen: ${NOMBRE_FOTO[id]})`, 9.5, "italic", gris); esp(2); return; }
+      const h = altoFoto(f), w = h * f.w / f.h; salto(h + 4);
+      doc.addImage(f.img, "JPEG", M + (ancho - w) / 2, y, w, h); y += h + 4;
+    };
+
+    texto("LABORATORIO DE ESTADÍSTICA · MEDIDAS DE TENDENCIA CENTRAL", 8.5, "bold", gris);
+    texto("Medidas de tendencia central: la balanza de la media", 16, "bold", navy, 1.2); esp(2);
+    const fecha = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+    texto(`Nombre: ${nombre}`, 11); texto(`Grupo: ${$("grupo").value.trim() || "—"}     Fecha: ${fecha}`, 11);
+    esp(1); doc.setDrawColor(...gris); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); esp(3);
+
+    const { out } = leerCalifs();
+    titulo("Actividad 1. Explorando la media");
+    pregunta("1. Mis calificaciones de tercer y cuarto semestre (NP = 5)", out.length ? out.join(", ") : "");
+    pregunta("Media calculada", $("a1_media").value);
+    foto("f1");
+    pregunta("2. " + etq('label[for="a1_q2"]'), $("a1_q2").value);
+    foto("f1b");
+    pregunta("3. Nueva media después del cambio", $("a1_nueva").value);
+    pregunta("4. " + etq('label[for="a1_q4"]').replace(/^4\.\s*/, ""), $("a1_q4").value);
+
+    titulo("Actividad 2. Explorando la mediana");
+    pregunta("1. Mis calificaciones ordenadas", $("a2_orden").value);
+    pregunta("Mediana", $("a2_mediana").value);
+    foto("f2");
+    pregunta("2. Nueva mediana después del cambio", $("a2_nueva").value);
+    pregunta("3. " + etq('label[for="a2_q3"]').replace(/^3\.\s*/, ""), $("a2_q3").value);
+
+    titulo("Actividad 3. Explorando la moda");
+    const tipo = document.querySelector('input[name="a3_tipo"]:checked');
+    pregunta("1. La moda es", tipo ? tipo.value : "");
+    pregunta("Moda", $("a3_moda").value);
+    foto("f3");
+    pregunta("2. Nueva moda después del cambio", $("a3_nueva").value);
+    pregunta("3. " + etq('label[for="a3_q3"]').replace(/^3\.\s*/, ""), $("a3_q3").value);
+
+    titulo("Actividad 4. Desviación y ajuste", 110);
+    texto("X = {5, 5, 6, 6, 7, 8, 8, 8, 9, 9, 9, 10}; media = 7.5, mediana = 8, moda 1 = 8, moda 2 = 9.", 10); esp(2);
+    // Tabla
+    const cols = ["xi", "media - xi", "mediana - xi", "moda 1 - xi", "moda 2 - xi"], wc = ancho / 5, hf = 6.2;
+    salto(hf * 15);
+    doc.setFillColor(...navy); doc.rect(M, y, ancho, hf, "F"); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(255, 255, 255);
+    cols.forEach((c, j) => doc.text(c, M + wc * j + wc / 2, y + 4.3, { align: "center" })); y += hf;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(...tinta); doc.setDrawColor(201, 211, 227);
+    X4.forEach((x, i) => {
+      if (i % 2) { doc.setFillColor(238, 242, 248); doc.rect(M, y, ancho, hf, "F"); }
+      doc.text(String(x), M + wc / 2, y + 4.3, { align: "center" });
+      MEDIDAS4.forEach((m, j) => { const v = $(`d${i}_${j}`).value.trim(); doc.text(v || "", M + wc * (j + 1) + wc / 2, y + 4.3, { align: "center" }); });
+      doc.rect(M, y, ancho, hf); y += hf;
+    });
+    doc.setFillColor(214, 222, 235); doc.rect(M, y, ancho, hf, "F"); doc.setFont("helvetica", "bold");
+    doc.text("Total", M + wc / 2, y + 4.3, { align: "center" });
+    MEDIDAS4.forEach((m, j) => doc.text($(`tot_${j}`).value.trim(), M + wc * (j + 1) + wc / 2, y + 4.3, { align: "center" }));
+    doc.rect(M, y, ancho, hf); y += hf;
+    for (let j = 1; j < 5; j++) doc.line(M + wc * j, y - hf * 14, M + wc * j, y);
+    esp(5);
+    pregunta("2. " + etq('label[for="a4_q2"]').replace(/^2\.\s*/, ""), $("a4_q2").value);
+    pregunta("3. " + etq('label[for="a4_q3"]').replace(/^3\.\s*/, ""), $("a4_q3").value);
+
+    titulo("Actividad 5. ¿Cuál medida representa mejor?");
+    ["a5_q1", "a5_q2", "a5_q3", "a5_q4"].forEach((id, k) => pregunta(etq(`label[for="${id}"]`).replace(/^\d\.\s*/, (k + 1) + ". "), $(id).value));
+    foto("f5");
+
+    const total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...gris);
+      doc.text("Laboratorio de Estadística, CCH-UNAM · Medidas de tendencia central", M, H - 8);
+      doc.text(`Página ${p} de ${total}`, W - M, H - 8, { align: "right" });
+    }
+    const archivo = "Tendencia_central_" + nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") + ".pdf";
+    doc.save(archivo);
+    msg.className = "msg ok"; msg.textContent = "Listo: se descargó " + archivo + ". Súbelo a Teams."; msg.hidden = false;
+  }
+  $("btnPDF").addEventListener("click", generarPDF);
+
+  cargar(); estado();
+})();
+</script>
+</body>
+</html>
