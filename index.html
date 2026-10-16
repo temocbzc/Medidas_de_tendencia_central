@@ -48,6 +48,7 @@
   h3 { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; color: var(--navy); margin: 4px 0 0; }
   p { margin: 0; }
   .hint { font-size: 0.86rem; color: var(--muted); }
+  .hint.sep { margin: 2px 0 6px; color: var(--ink); }
   .nota { background: var(--tip-bg); border-left: 3px solid var(--tip); border-radius: 6px; padding: 10px 12px; font-size: 0.93rem; }
   .formula { font-family: var(--serif); font-size: 1.08rem; text-align: center; overflow-x: auto; padding: 4px 0; }
   .sym { font-family: var(--serif); font-style: italic; }
@@ -112,6 +113,12 @@
   td.xi { font-weight: 700; width: 46px; }
   td input { text-align: center; padding: 6px 2px; min-width: 52px; font-variant-numeric: tabular-nums; }
   td input[readonly] { background: var(--given); border-style: dashed; color: var(--muted); }
+  .celda { display: flex; align-items: stretch; gap: 2px; }
+  .celda input { min-width: 0; flex: 1; }
+  .pm { flex: none; width: 22px; padding: 0; font-size: 0.95rem; font-weight: 700; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); color: var(--navy); }
+  #tablaDesv td input { padding: 6px 1px; font-size: 0.95rem; min-width: 0; width: 100%; }
+  #tablaDesv td.xi, #tablaDesv tr.total td:first-child { width: 30px; padding: 2px; font-size: 0.9rem; }
+  #tablaDesv td { padding: 3px 2px; }
   td input.bien { border-color: var(--ok-ink); box-shadow: inset 0 0 0 1px var(--ok-ink); }
   td input.mal { border-color: var(--bad-ink); box-shadow: inset 0 0 0 1px var(--bad-ink); }
 
@@ -168,7 +175,8 @@
       <div class="califs" id="califs"></div>
       <div class="actions"><button type="button" class="secondary" id="masCalif">+ Agregar</button><button type="button" class="secondary" id="menosCalif">− Quitar la última</button></div>
       <p class="flabel" style="margin-top:6px">Calcula la media de estas calificaciones.</p>
-      <div class="resp"><span class="lab">x̄ =</span><input type="text" id="a1_media" inputmode="decimal"></div>
+      <div class="resp"><span class="lab">x̄ =</span><input type="text" id="a1_media" autocomplete="off"></div>
+      <p class="hint">Si tu resultado tiene decimales, usa punto: por ejemplo, 7.5</p>
     </div>
     <div class="q field">
       <p class="flabel"><span class="qn">2.</span>Pon tus calificaciones en la balanza: así se forma tu diagrama de puntos. Mueve el triángulo hasta que la balanza quede en equilibrio. ¿En qué valor queda? ¿Coincide con la media que calculaste?</p>
@@ -178,7 +186,7 @@
     </div>
     <div class="q field">
       <p class="flabel"><span class="qn">3.</span>En la balanza, arrastra una de tus calificaciones más bajas hasta el 10, o una de las más altas hasta el 5. Calcula la nueva media y anota tu resultado.</p>
-      <div class="resp"><span class="lab">Nueva x̄ =</span><input type="text" id="a1_nueva" inputmode="decimal"></div>
+      <div class="resp"><span class="lab">Nueva x̄ =</span><input type="text" id="a1_nueva" autocomplete="off"></div>
       <p class="hint">Antes de cambiar el bloque, guarda la imagen de la balanza con tus datos originales. Después del cambio, guarda la segunda imagen.</p>
     </div>
     <div class="q field">
@@ -193,13 +201,14 @@
     <div class="q field">
       <p class="flabel"><span class="qn">1.</span>Con el mismo conjunto de calificaciones, identifica la mediana. Recuerda: es el valor central cuando los datos están ordenados de menor a mayor. En la balanza tus datos ya aparecen ordenados.</p>
       <label for="a2_orden">Escribe tus calificaciones ordenadas de menor a mayor</label>
-      <input type="text" id="a2_orden" inputmode="decimal">
-      <div class="resp"><span class="lab">x̃ =</span><input type="text" id="a2_mediana" inputmode="decimal"></div>
+      <p class="hint sep"><b>Sepáralas con una coma y un espacio.</b> Ejemplo: <b style="white-space:nowrap">5, 6, 7, 7, 8</b></p>
+      <input type="text" id="a2_orden" placeholder="5, 6, 7, 7, 8" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="resp"><span class="lab">x̃ =</span><input type="text" id="a2_mediana" autocomplete="off"></div>
       <div id="sim2"></div>
     </div>
     <div class="q field">
       <p class="flabel"><span class="qn">2.</span>En la balanza, cambia una de tus calificaciones más bajas por un 10, o una de las más altas por un 5. Encuentra la nueva mediana.</p>
-      <div class="resp"><span class="lab">Nueva x̃ =</span><input type="text" id="a2_nueva" inputmode="decimal"></div>
+      <div class="resp"><span class="lab">Nueva x̃ =</span><input type="text" id="a2_nueva" autocomplete="off"></div>
     </div>
     <div class="q field">
       <label for="a2_q3"><span class="qn">3.</span>Reflexiona: ¿cómo afectó el cambio en los datos a la mediana? ¿Es la mediana más estable frente a cambios extremos en comparación con la media?</label>
@@ -218,13 +227,14 @@
         <label><input type="radio" name="a3_tipo" value="Multimodal"> Multimodal</label>
         <label><input type="radio" name="a3_tipo" value="Amodal"> Amodal</label>
       </div>
-      <p class="flabel">Si la moda es unimodal escribe su valor (si es bimodal o multimodal, escribe todos separados por comas).</p>
-      <div class="resp"><span class="lab">x̂ =</span><input type="text" id="a3_moda" inputmode="decimal"></div>
+      <p class="flabel">Si la moda es unimodal escribe su valor. Si es bimodal o multimodal, escribe todos los valores <b>separados con una coma y un espacio</b>. Si es amodal, escribe <b>no hay</b>.</p>
+      <p class="hint sep">Ejemplos: unimodal <b>8</b> · bimodal <b>7, 9</b></p>
+      <div class="resp"><span class="lab">x̂ =</span><input type="text" id="a3_moda" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       <div id="sim3"></div>
     </div>
     <div class="q field">
       <p class="flabel"><span class="qn">2.</span>Cambia una de tus calificaciones más bajas por un 10, o una de las más altas por un 5, y encuentra la nueva moda.</p>
-      <div class="resp"><span class="lab">Nueva x̂ =</span><input type="text" id="a3_nueva" inputmode="decimal"></div>
+      <div class="resp"><span class="lab">Nueva x̂ =</span><input type="text" id="a3_nueva" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
     </div>
     <div class="q field">
       <label for="a3_q3"><span class="qn">3.</span>Reflexiona: si tu moda fue unimodal, ¿cómo afectó el cambio en los datos a la moda? ¿Es la moda más estable frente a cambios extremos en comparación con la media?</label>
@@ -238,10 +248,10 @@
     <div class="q field">
       <p class="flabel"><span class="qn">1.</span>Observa las calificaciones que un alumno del CCH obtuvo en tercer y cuarto semestre:</p>
       <p class="formula"><span class="sym">X</span> = {5, 5, 6, 6, 7, 8, 8, 8, 9, 9, 9, 10}</p>
-      <p>donde <span class="sym">x̄</span> = 7.5, <span class="sym">x̃</span> = 8, <span class="sym">x̂</span><sub>1</sub> = 8 y <span class="sym">x̂</span><sub>2</sub> = 9. Completa la tabla calculando cuánto se desvía cada valor respecto a la media, la mediana, la moda 1 y la moda 2: a cada medida réstale el valor (por ejemplo, 7.5 − 5 = 2.5). Luego suma cada columna.</p>
+      <p>donde <span class="sym">x̄</span> = 7.5, <span class="sym">x̃</span> = 8, <span class="sym">x̂</span><sub>1</sub> = 8 y <span class="sym">x̂</span><sub>2</sub> = 9. Completa la tabla calculando cuánto se desvía cada valor respecto a la media, la mediana, la moda 1 y la moda 2: a cada valor réstale la medida (por ejemplo, 5 − 7.5 = −2.5). Luego suma cada columna. Usa el botón <b>±</b> para cambiar el signo de un número.</p>
       <div class="scroll">
         <table>
-          <thead><tr><th>x<sub>i</sub></th><th>x̄ − x<sub>i</sub></th><th>x̃ − x<sub>i</sub></th><th>x̂<sub>1</sub> − x<sub>i</sub></th><th>x̂<sub>2</sub> − x<sub>i</sub></th></tr></thead>
+          <thead><tr><th>x<sub>i</sub></th><th>x<sub>i</sub> − x̄</th><th>x<sub>i</sub> − x̃</th><th>x<sub>i</sub> − x̂<sub>1</sub></th><th>x<sub>i</sub> − x̂<sub>2</sub></th></tr></thead>
           <tbody id="tablaDesv"></tbody>
         </table>
       </div>
@@ -491,7 +501,7 @@
       if (this.mostrar.media && e.n) partes.push(`<span style="color:${COL.media}"><b style="color:inherit">x̄</b> = ${fmt(e.media)}</span>`);
       if (this.mostrar.mediana && e.n) partes.push(`<span style="color:${COL.mediana}"><b style="color:inherit">x̃</b> = ${fmt(e.mediana)}</span>`);
       if (this.mostrar.moda && e.n) partes.push(`<span style="color:${COL.moda}"><b style="color:inherit">x̂</b> = ${e.modas.length ? e.modas.map(fmt).join(" y ") : "no hay"} (${e.tipo})</span>`);
-      if (this.mostrar.desv && e.n) partes.push(`<span>Σ(x̄ − x<sub>i</sub>) = <b>${fmt(e.orden.reduce((s, v) => s + (e.media - v), 0) + 0)}</b></span>`);
+      if (this.mostrar.desv && e.n) partes.push(`<span>Σ(x<sub>i</sub> − x̄) = <b>${fmt(e.orden.reduce((s, v) => s + (v - e.media), 0) + 0)}</b></span>`);
       this.lectura.innerHTML = partes.join("");
       this.e = e;
       this.dibujar();
@@ -699,27 +709,37 @@
   // ===================== Actividad 4: tabla de desviaciones =====================
   const MEDIDAS4 = [7.5, 8, 8, 9];
   const DADAS = { "0-0": 1, "0-1": 1, "0-2": 1, "0-3": 1, "2-3": 1, "5-0": 1, "8-2": 1, "11-1": 1 };
-  const num = (t) => { const v = Number(String(t).trim().replace(",", ".")); return String(t).trim() === "" ? null : v; };
+  const num = (t) => { const v = Number(String(t).trim().replace(/[−–]/g, "-").replace(/\s/g, "").replace(",", ".")); return String(t).trim() === "" ? null : v; };
   (function pintarTabla4() {
     const tb = $("tablaDesv");
     X4.forEach((x, i) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td class="xi">${x}</td>` + MEDIDAS4.map((m, j) => {
         const id = `d${i}_${j}`, dada = DADAS[`${i}-${j}`];
-        return `<td><input type="text" inputmode="decimal" id="${id}" ${dada ? `readonly value="${fmt(m - x)}"` : ""} aria-label="Fila ${i + 1}, columna ${j + 1}"></td>`;
+        return dada ? `<td><input type="text" id="${id}" readonly value="${fmt(x - m)}" aria-label="Fila ${i + 1}, columna ${j + 1}"></td>`
+                    : `<td><div class="celda"><button type="button" class="pm" data-for="${id}" aria-label="Cambiar signo">±</button><input type="text" id="${id}" autocomplete="off" aria-label="Fila ${i + 1}, columna ${j + 1}"></div></td>`;
       }).join("");
       tb.appendChild(tr);
     });
     const tot = document.createElement("tr"); tot.className = "total";
-    tot.innerHTML = `<td>Total</td>` + MEDIDAS4.map((m, j) => `<td><input type="text" inputmode="decimal" id="tot_${j}" aria-label="Total columna ${j + 1}"></td>`).join("");
+    tot.innerHTML = `<td>Total</td>` + MEDIDAS4.map((m, j) => `<td><div class="celda"><button type="button" class="pm" data-for="tot_${j}" aria-label="Cambiar signo">±</button><input type="text" id="tot_${j}" autocomplete="off" aria-label="Total columna ${j + 1}"></div></td>`).join("");
     tb.appendChild(tot);
   })();
+  document.getElementById("tablaDesv").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".pm"); if (!b) return;
+    const inp = document.getElementById(b.dataset.for);
+    let v = inp.value.trim();
+    if (/^[-−–]/.test(v)) v = v.replace(/^[-−–]\s*/, ""); else v = "-" + v;
+    inp.value = v; inp.classList.remove("bien", "mal");
+    inp.dispatchEvent(new Event("input", { bubbles: true }));
+    if (v === "-") inp.focus();
+  });
   const CELDAS4 = [];
   X4.forEach((x, i) => MEDIDAS4.forEach((m, j) => { if (!DADAS[`${i}-${j}`]) CELDAS4.push(`d${i}_${j}`); }));
   MEDIDAS4.forEach((m, j) => CELDAS4.push(`tot_${j}`));
   function correcto(id) {
-    if (id.startsWith("tot_")) { const j = +id.slice(4); return X4.reduce((s, x) => s + (MEDIDAS4[j] - x), 0); }
-    const [i, j] = id.slice(1).split("_").map(Number); return MEDIDAS4[j] - X4[i];
+    if (id.startsWith("tot_")) { const j = +id.slice(4); return X4.reduce((s, x) => s + (x - MEDIDAS4[j]), 0); }
+    const [i, j] = id.slice(1).split("_").map(Number); return X4[i] - MEDIDAS4[j];
   }
   $("revisar4").addEventListener("click", () => {
     let bien = 0, vacias = 0;
@@ -836,7 +856,7 @@
     titulo("Actividad 4. Desviación y ajuste", 110);
     texto("X = {5, 5, 6, 6, 7, 8, 8, 8, 9, 9, 9, 10}; media = 7.5, mediana = 8, moda 1 = 8, moda 2 = 9.", 10); esp(2);
     // Tabla
-    const cols = ["xi", "media - xi", "mediana - xi", "moda 1 - xi", "moda 2 - xi"], wc = ancho / 5, hf = 6.2;
+    const cols = ["xi", "xi - media", "xi - mediana", "xi - moda 1", "xi - moda 2"], wc = ancho / 5, hf = 6.2;
     salto(hf * 15);
     doc.setFillColor(...navy); doc.rect(M, y, ancho, hf, "F"); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(255, 255, 255);
     cols.forEach((c, j) => doc.text(c, M + wc * j + wc / 2, y + 4.3, { align: "center" })); y += hf;
